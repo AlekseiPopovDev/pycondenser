@@ -9,19 +9,25 @@ import datetime
 import os
 import re
 import ffmpeg
+import shutil
 
 VIDEO_EXT=('.mkv', '.mp4', '.avi', '.webm')
 SUB_EXT=('.srt', '.ass')
+DIRECTORY='condensed'
+TEMP_DIRECTORY='condensed_temp'
 
 
 def main():
     sub_files, vid_files = get_files()
     codec, audio_stream = get_audio_info(vid_files[0])
-    os.mkdir('condensed')
+    os.mkdir(DIRECTORY)
+    os.mkdir(TEMP_DIRECTORY)
     for i, subtitle in enumerate(sub_files):
         subtitles_from_file = parser(subtitle)
         extract_lines(subtitles_from_file, vid_files[i], i, codec, audio_stream)
         concat_extracted_lines(vid_files[i], i, codec)
+        print(f'{vid_files[i]} is ready')
+    shutil.rmtree(TEMP_DIRECTORY)
 
 
 def get_audio_info(video_file):
@@ -30,7 +36,6 @@ def get_audio_info(video_file):
     if streams_n == 1:
         codec = probe['streams'][0]['codec_name']
         audio_stream = "-map 0:1"
-        #language = probe['streams'][0]['tags']['language']
     else:
         for i in range(streams_n):
             print(f'{i+1}: {probe["streams"][i]["tags"]["language"]}')
@@ -38,7 +43,6 @@ def get_audio_info(video_file):
             stream = input("Select stream number: ")
             try:
                 codec = probe['streams'][int(stream) - 1]['codec_name']
-                #language = probe['streams'][int(stream) - 1]['tags']['language']
                 audio_stream = f"-map 0:{int(stream) - 1}"
             except ValueError:
                 continue
@@ -51,13 +55,13 @@ def get_audio_info(video_file):
 
 def concat_extracted_lines(video_file, ep, audiocodec):
     name, _ = os.path.splitext(video_file)
-    voice_lines = os.listdir(f'condensed/ep{ep+1}')
+    voice_lines = os.listdir(f'{TEMP_DIRECTORY}/ep{ep+1}')
     voice_lines = natural_sort(voice_lines)
     concat_file = open('concat-file', 'w')
     for fragment in voice_lines:
-        print(f'file condensed/ep{ep+1}/{fragment}', file = concat_file)
+        print(f'file {TEMP_DIRECTORY}/ep{ep+1}/{fragment}', file = concat_file)
     concat_file.close()
-    os.system(f'ffmpeg -loglevel panic -f concat -i concat-file -c copy "{name}.{audiocodec}"')
+    os.system(f'ffmpeg -loglevel panic -f concat -i concat-file -c copy "{DIRECTORY}/{name}.{audiocodec}"')
     os.remove('concat-file')
 
 
@@ -119,7 +123,7 @@ def parser(subtitle):
 
 
 def extract_lines(subtitles, videofile_name, ep, audiocodec, audio_stream):
-    os.mkdir(f'condensed/ep{ep+1}')
+    os.mkdir(f'{TEMP_DIRECTORY}/ep{ep+1}')
     # In order to get quality condensed files, repeated lines and very short lines (less than 1 second) should be ignored
     prev_start = datetime.datetime.strptime('0:00:00.00', '%H:%M:%S.%f')
     prev_end = datetime.datetime.strptime('0:00:00.00', '%H:%M:%S.%f')
@@ -133,8 +137,7 @@ def extract_lines(subtitles, videofile_name, ep, audiocodec, audio_stream):
             duration += '.000000'
         duration = datetime.datetime.strptime(duration, '%H:%M:%S.%f')
         if duration > MINIMAL_DURATION and prev_start != start and prev_end != end:
-            #print(f'Line #{i+1} starts at: {subtitle[0]}, ends at: {subtitle[1]}; duration is: {duration}')
-            os.system(f'ffmpeg -i "{videofile_name}" {audio_stream} -vn -acodec copy -ss {subtitle[0]} -to {subtitle[1]} condensed/ep{ep+1}/{i+1}.{audiocodec}')
+            os.system(f'ffmpeg -loglevel panic -i "{videofile_name}" {audio_stream} -vn -acodec copy -ss {subtitle[0]} -to {subtitle[1]} {TEMP_DIRECTORY}/ep{ep+1}/{i+1}.{audiocodec}')
         prev_start = start
         prev_end = end
 

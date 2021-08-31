@@ -1,14 +1,19 @@
 # pycondenser
 
-Tool to make condensed audio for passive immersing. Works with `.ass` and `.srt` subtitles.
+Tool to make condensed audio for passive immersion.
+Works with `.ass` and `.srt` subtitles.
 
-Requires `ffmpeg-python`:
+Requires `ffmpeg` and `ffmpeg-python`
+
+Get `ffmpeg` with your package manager. Get `ffmpeg-python` with pip:
 
 ```
 pip install ffmpeg-python
 ```
 
-* Does not re-encode audio (ffmpeg -acodec copy)
+## Features
+
+* Does not re-encode audio (-acodec copy)
 * Detects multiple audio streams, prompts user
 to select desired one
 * Ignores repeated voice lines and voice lines
@@ -25,7 +30,8 @@ Add `~/.local/bin` directory to PATH if it is not on PATH.
 
 Start `pycondenser` in directory containing
 subtitle and video files. Condensed files
-will be created in the same directory.
+by default will be created in the `condensed`
+directory.
 
 **Note:** Subtitle and video files should have the
 same name. The number of files should be
