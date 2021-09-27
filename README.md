@@ -23,10 +23,9 @@ shorter than one second
 
 ```
 chmod +x pycondenser.py
-mv pycondenser.py ~/.local/bin/pycondenser
 ```
 
-Add `~/.local/bin` directory to PATH if it is not on PATH.
+Move `pycondenser.py` to the $PATH
 
 Start `pycondenser` in directory containing
 subtitle and video files. Condensed files
